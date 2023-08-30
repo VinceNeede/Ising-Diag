@@ -135,4 +135,33 @@ sudo make install
 ✨ Congratulations, you have installed `arpack` lib.
 
 # HOW TO USE ISING #
+## Clone the repository ##
+First you have to clone the repository, since this is a private repository it is not easy at all, at first you are going to need your all PAT (Personal Access Token) that you can create
+following [this tutorial](https://nira.com/how-to-clone-a-private-repository-in-github/).
 
+For saving your pat on your local pc we are going to create a local variable. First open in writing mode the file `.bashrc`
+```bash
+nano /home/user/.bashrc
+```
+where user is your account on linux. At the end of the file, write
+```bash
+export PAT="<pat>"
+```
+where <pat> is the PAT you created (for pasting `ctrl+shift+v`). Save the file by pressing `ctrl+O` and then `Enter`, and exit by pressing `ctrl+x`.
+
+Load the variable with the following command:
+```bash
+source /home/user/.bashrc
+```
+Finally you can clone the repository:
+```bash
+git clone https://${PAT}@github.com/VinceNeede/Ising.git
+```
+Here `${PAT}` outputs the variable we saved earlier.
+
+## Compile the file ##
+Being sure to be inside the Ising folder, set the intel environment (if not already done) by running 
+```bash
+source /opt/intel/oneapi/setvars.sh
+```
+It is now possible to compile the two files `Ising.f90` and `Ising_Parity.f90`, together with the library `diag.f90`, by just running
