@@ -165,3 +165,7 @@ Being sure to be inside the Ising folder, set the intel environment (if not alre
 source /opt/intel/oneapi/setvars.sh
 ```
 It is now possible to compile the two files `Ising.f90` and `Ising_Parity.f90`, together with the library `diag.f90`, by just running
+```
+make
+```
+You can now use the two files by setting the parameters - number of spins, transversal and longitudinal fields (the last one is not considered by Ising_Parity), OBC or PBC - in the `chain.in` file, and then run Ising with the command `./_results/Ising` or Ising_Parity with the command `._results/Ising_Parity`.
