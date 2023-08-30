@@ -169,3 +169,4 @@ It is now possible to compile the two files `Ising.f90` and `Ising_Parity.f90`, 
 make
 ```
 You can now use the two files by setting the parameters - number of spins, transversal and longitudinal fields (the last one is not considered by Ising_Parity), OBC or PBC - in the `chain.in` file, and then run Ising with the command `./_results/Ising` or Ising_Parity with the command `._results/Ising_Parity`.
+> NOTE: you don't have to compile the file each time you modify the file `chain.in`.
