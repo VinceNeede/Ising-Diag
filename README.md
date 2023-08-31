@@ -159,7 +159,8 @@ git clone https://${PAT}@github.com/VinceNeede/Ising.git
 ```
 Here `${PAT}` outputs the variable we saved earlier.
 
-## Compile the file ## --!>
+## Compile the file ## 
+-->
 First clone the repository:
 ```bash
 git clone https://github.com/VinceNeede/Ising-Diag.git
