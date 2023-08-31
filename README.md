@@ -135,7 +135,7 @@ sudo make install
 ✨ Congratulations, you have installed `arpack` lib.
 
 # HOW TO USE ISING #
-## Clone the repository ##
+<!-- ## Clone the repository ##
 First you have to clone the repository, since this is a private repository it is not easy at all, at first you are going to need your all PAT (Personal Access Token) that you can create
 following [this tutorial](https://nira.com/how-to-clone-a-private-repository-in-github/).
 
@@ -159,8 +159,13 @@ git clone https://${PAT}@github.com/VinceNeede/Ising.git
 ```
 Here `${PAT}` outputs the variable we saved earlier.
 
-## Compile the file ##
-Being sure to be inside the Ising folder, set the intel environment (if not already done) by running 
+## Compile the file ## --!>
+First clone the repository:
+```bash
+git clone https://github.com/VinceNeede/Ising-Diag.git
+cd Ising-Diag/
+```
+If not already done, set the intel environment by running 
 ```bash
 source /opt/intel/oneapi/setvars.sh
 ```
