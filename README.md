@@ -1,6 +1,7 @@
 # Ising #
-Diagonalization of Ising Hamiltonian
-
+This library diagonalize the 1-D Ising Hamiltonian:
+$$\hat H = -J \sum_j \hat X_j \hat X_{j+1} - g \sum_j \hat Z_j +h \sum_j \hat X_j$$
+Using the `arpack-ng` library, build with `MKL`, and storing the matrix in a sparse format using `MKL_SPBLAS` library.
 # Prerequisites #
 These are the libraries needed by the program.
 ## For Ubuntu ##
