@@ -14,13 +14,14 @@ program dsaupd_mkl
     
     implicit none
     integer, allocatable :: iSpin(:,:), spin_z(:), order(:)
-    integer:: ell, N, nev, ncv, nnz
-    real(rk) :: d(3),x(2),y(2)
+    integer:: ell, N, nev, ncv, nnz, ii
+    real(8) :: d_m(3), d_p(3)
+    real(8), allocatable :: evec_m(:,:), evec_p(:,:)
     
     type(SPARSE_MATRIX_T) :: A_p, A_m
     TYPE(MATRIX_DESCR) :: descrA
     integer, allocatable :: row_p(:), col_p(:), row_m(:), col_m(:)
-    real(8), allocatable :: val_p(:), val_m(:)
+    real(8), allocatable :: val_p(:), val_m(:), mag_x(:)
     
     !   %--------------------------------------%
     !   | Import the parameteres from the      |
@@ -42,7 +43,7 @@ program dsaupd_mkl
     allocate(iSpin(N,ell), spin_z(N), order(N))
     allocate(row_p(nnz), row_m(nnz), col_p(nnz), col_m(nnz)&
     , val_p(nnz), val_m(nnz))
-    
+
     call set_variables(iSpin, order, spin_z, ell)    
     
     !   %---------------------------------------%
@@ -80,25 +81,42 @@ program dsaupd_mkl
     !   | for the Smallest Algebric eigenvalues.|
     !   | Other options can be select, as 'LM'  |
     !   | which stands for Larges Magnitude.    |
+    !   | If evec is given as an argument to the|
+    !   | routine, on the output it will store  |
+    !   | the eigenvectors computed. It has to  |
+    !   | a NxNEV matrx. The eigenvectors are   |
+    !   | stored as columns, and the order is   |
+    !   | the same of the eigenvalues.          |
     !   %---------------------------------------%
     
     nev = 3
     ncv = min(n,20)
-    call dlanc(A_p, descrA, n, nev, ncv, 'I', 'SA', d)
-    
-    !   %---------------------------------------%
-    !   | TODO: not necessarly all the          |
-    !   | eigenvalues searched are going to     |
-    !   | converge, add a Flag and organize     |
-    !   | the array such that d(1) is the       |
-    !   | smallest.                             |
-    !   %---------------------------------------%
-    
-    print*,d
-    call dlanc(A_m, descrA, n, nev, ncv, 'I', 'SA', d)
-    print*, d
+    ncv=2
+
+    allocate(evec_p(N,3), evec_m(N,3), mag_x(ell))
+
+    call dlanc(A_p, descrA, n/2, nev, ncv, 'I', 'SA', d_p, evec=evec_p)
+    print*, d_p
+    ! do ii=1, N
+    !     print'(3(F9.2,x))', evec_p(order(ii),:)
+    ! enddo
+    ! print*,''
+
+    call dlanc(A_m, descrA, n/2, nev, ncv, 'I', 'SA', d_m, evec=evec_m)
+    print*, d_m
+    ! do ii=1, N
+    !     if (order(ii) .le. N/2) then 
+    !         print'(3(F9.2,x))', evec_m(order(ii)+N/2,:)
+    !     else
+    !         print'(3(F9.2,x))', evec_m(order(ii)-N/2,:)
+    !     endif
+    ! enddo
+    ! print*,''
+
+    call Magnetization(evec_p(:,1),evec_m(:,1), mag_x)
+    print*, mag_x
+
     contains
-    
     subroutine set_variables(ispin, order, spin_z, ell)
         implicit none
         integer, intent(in) :: ell
@@ -123,6 +141,32 @@ program dsaupd_mkl
         !   | down spins c_down, so that the total  | 
         !   | spin is L-2*c_down, since the number  |
         !   | of up spins is L-c_down.              |
+        !   | In order to seperate the two parity   |
+        !   | sector we have to consider a permuted |
+        !   | basis, take L=2 for example:          |
+        !   |               1       1               |
+        !   |               2       4               |
+        !   |               3       2               |
+        !   |               4       3               |
+        !   | For this reason we introduce a new    |
+        !   | array order of size N, which idea is: |
+        !   | Calling A the matrix in the           |
+        !   | computational basis, and B in the     |
+        !   | permuted one, we would have:          |
+        !   |                                       |
+        !   |  (A)_{i,j} = (B)_{order(i), order(j)} |
+        !   |                                       |
+        !   | for order(i)<=N/2 we would have a     |
+        !   | symmetric parity sector, for          |
+        !   | order(i)>N/2 the antisymmetric one.   |
+        !   | The array order can be build by takin |
+        !   | the array of the permuted basis and   |
+        !   | exchange the values with the array    |
+        !   | index, i.e.:                          |
+        !   |               order(1)=1              |  
+        !   |               order(4)=2              |
+        !   |               order(2)=3              |
+        !   |               order(3)=4              |
         !   %---------------------------------------%
         
         integer :: kk, tt, ii, jj, c_down, N, itemp
@@ -203,15 +247,10 @@ program dsaupd_mkl
         !   | the spin value of the ii+1 spin must  |
         !   | always be 1. Such thing is implemented|
         !   | by the further loop over jj.          |
-        !   | The iarr variable is an index that    |
-        !   | goes from 1 to nnz, that could be     |
-        !   | implemented by setting it to zero and |
-        !   | adding one (iarr=iarr+1) at each      |
-        !   | assigment. Since such implementation  |
-        !   | can create some problems in parallel  |
-        !   | programming, by preferring            |
-        !   | optimization over readability I       |
-        !   | decided to adopt another way.         |
+        !   | The two parity sectors are implemented|
+        !   | simultaneously, for the minus parity  |
+        !   | sector, since the indexes hav to go   |
+        !   | from 1 to N/2, we have to subtract N/2|
         !   %---------------------------------------%
         
         iarr_p = 0
@@ -220,13 +259,8 @@ program dsaupd_mkl
             do jj = 1, 2**(ell-ii-1)
                 do kk = (jj-1)*2**(ii+1)+2**ii+1, jj*2**(ii+1)
                     indx = kk+2**(ii)*(1-2*iSpin(kk,ii+1)) + 2**(ii-1)*(1-2*iSpin(kk,ii))
-                    !iarr=kk-2**(ii)-(jj-1)*2**(ii)+2**(ell-1)*(ii-1)
-                    !print*, indx, kk
-                    
                     exc=order(kk)
                     indx=order(indx)
-                    !print*, indx, exc
-                    
                     if (indx<=2**(ell-1) .and. exc<=2**(ell-1)) then
                         iarr_p=iarr_p+1
                         row_p(iarr_p) = minval([indx, exc])
@@ -248,6 +282,7 @@ program dsaupd_mkl
                 indx = Order(indx)
                 Exc = Order(kk)
                 if (indx<=N/2 .and. Exc<=N/2) then
+                   
                     iarr_p=iarr_p+1
                     row_p(iarr_p) = minval([indx, Exc])
                     col_p(iarr_p) = maxval([indx, Exc])
@@ -260,17 +295,6 @@ program dsaupd_mkl
                 endif
             enddo
         endif
-        ! start_arr=(ell-1)*2**(ell-1)
-        ! if (PBC) then
-        !     do kk = 2**(ell-1)+1, 2**ell
-        !         iarr=kk-2**(ell-1)
-        !         indx=kk + (1-2*ispin(kk,1)) + 2**(ell-1)*(1-2*ispin(kk,ell))
-        !         col(start_arr+iarr)=kk
-        !         row(start_arr+iarr)=indx
-        !         val(start_arr+iarr)=-1.d0
-        !     enddo
-        !     start_arr=start_arr+2**(ell-1)
-        ! endif
         
         ! !   %---------------------------------%
         ! !   |                                 |
@@ -292,37 +316,6 @@ program dsaupd_mkl
                 val_m(iarr_m) = -gfield*spin_z(ii)
             endif
         end do
-        ! do ii = 1, N
-        !     exc=order(ii)
-        !     row(start_arr+ii) = ii
-        !     col(start_arr+ii) = ii
-        !     val(start_arr+ii) = -gfield*spin_z(ii)
-        ! enddo
-        start_arr=start_arr+N
-        
-        ! !   %-----------------------------------%
-        ! !   |                                   |
-        ! !   |  +h\sum_j X_j Longitudinal Field  |
-        ! !   |                                   |
-        ! !   %-----------------------------------%
-        
-        ! do ii = 1, ell
-        !     do jj = 1, 2**(ell-ii)
-        !         do kk = (jj-1)*2**ii + 2**(ii-1)+1, jj*2**ii
-        !             indx=kk+2**(ii-1)*(1-2*ispin(kk,ii))
-        !             iarr=kk-2**(ii-1)-(jj-1)*2**(ii-1)+2**(ell-1)*(ii-1)
-        !             col(start_arr+iarr) = kk
-        !             row(start_arr+iarr) = indx
-        !             val(start_arr+iarr) = Lambda
-        !         enddo
-        !     enddo
-        ! enddo
-        ! print*, col_p
-        ! print*, row_p
-        ! print*, val_p
-        ! print*, col_m
-        ! print*, row_m
-        ! print*, val_m
         
         stat=mkl_sparse_d_create_coo(A_p,SPARSE_INDEX_BASE_ONE,N/2,N/2, nnz, row_p,col_p, val_p)
         if (stat .ne. 0) print*, 'error in sparse matrix creation: ', stat
@@ -334,6 +327,47 @@ program dsaupd_mkl
         descrA % Mode = SPARSE_FILL_MODE_UPPER
         descrA % diag = SPARSE_DIAG_NON_UNIT
         
+    end subroutine
+
+    subroutine Magnetization(psi_0, psi_1, mag_x)
+        implicit none
+        real(8), intent(in) :: psi_0(:)
+        real(8), intent(in) :: psi_1(:)
+        real(8), intent(out) :: mag_x(:)
+
+        !   %---------------------------------------%
+        !   | Here we compute the magnetization of  |
+        !   | ground state by computing:            |
+        !   |           <psi_0|Mx|psi_1>            |
+        !   | where |psi_0> is the ground state with|
+        !   | parity +, and psi_1 the ground state  |
+        !   | with parity -, since Mx anticommutes  |
+        !   | withe the parity operator, his mean   |
+        !   | value on psi_0 and psi_1 alone is     |
+        !   | zero.                                 |
+        !   | In doing the computation we have to   |
+        !   | remind that the states are not written|
+        !   | in the computational basis but in the |
+        !   | permuted one, so we have to permute it|
+        !   | back.                                 |
+        !   %---------------------------------------%
+
+        integer :: ii, jj, jord, exc
+        
+        do ii =1, ell
+            mag_x(ii)=0.d0
+            do jj =1, N
+                jord=order(jj)
+                exc=order(jj+2**(ii-1)*(1-2*ispin(jj,ii)))
+                if (exc .le. N/2) then 
+                    !print*, jord, exc+N/2
+                    mag_x(ii)=mag_x(ii)+psi_0(jord)*psi_1(exc+N/2)
+                else
+                    !print*, jord, exc-N/2
+                    mag_x(ii)=mag_x(ii)+psi_0(jord)*psi_1(exc-N/2)
+                endif
+            enddo
+        enddo
     end subroutine
 end program dsaupd_mkl
 
