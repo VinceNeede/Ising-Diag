@@ -376,24 +376,13 @@ module diagonalization
         endif
         !
         nconv =  iparam(5)
-        do j = 1, (nconv+1)/2
-            call swap(d(j), d(nconv-(j-1)))
-        enddo
+        ! print*, evec(:8,1)
         if (rvec) then
             do j=1,nconv
-                call dcopy(n,v(:,nconv-(j-1)),1,evec(:,j),1)
+                call dcopy(n,v(:,j),1,evec(:,j),1)
             end do
-        endif
-    end subroutine
-
-    subroutine swap (x,y)
-        implicit none
-        real(8),intent(inout) :: x,y
-
-        real(8) :: c
-        c=x
-        x=y
-        y=c
+        ! print*, evec(:8,1)
+    endif
     end subroutine
 
 end module
