@@ -45,7 +45,6 @@ program dsaupd_mkl
     , val_p(nnz), val_m(nnz))
 
     call set_variables(iSpin, order, spin_z, ell)    
-    
     !   %---------------------------------------%
     !   | Call the Build_Ham subroutine which   |
     !   | construct a sparse rappresentation of |
@@ -90,20 +89,39 @@ program dsaupd_mkl
     !   %---------------------------------------%
     
     nev = 3
-    ncv = min(n,20)
-    ncv=2
+    ncv = min(n/2,20)
 
     allocate(evec_p(N,3), evec_m(N,3), mag_x(ell))
 
     call dlanc(A_p, descrA, n/2, nev, ncv, 'I', 'SA', d_p, evec=evec_p)
-    print*, d_p
+
+
+    ! do ii=1, N
+    !     if (order(ii) .gt. N/2) then
+    !         print '(3(F9.2,x))', 0.d0,0.d0,0.d0
+    !     else
+    !         print'(3(F9.2,x))', evec_p(order(ii),:)
+    !     endif
+    ! enddo
+    ! print*,''
+    call reorder(d_p, evec_p, N, nev)
+    !print*, d_p
     ! do ii=1, N
     !     print'(3(F9.2,x))', evec_p(order(ii),:)
     ! enddo
     ! print*,''
 
     call dlanc(A_m, descrA, n/2, nev, ncv, 'I', 'SA', d_m, evec=evec_m)
-    print*, d_m
+    ! do ii=1, N
+    !     if (order(ii) .le. N/2) then 
+    !         print'(3(F9.2,x))', evec_m(order(ii)+N/2,:)
+    !     else
+    !         print'(3(F9.2,x))', evec_m(order(ii)-N/2,:)
+    !     endif
+    ! enddo
+    ! print*,''
+    call reorder(d_m, evec_m, N, nev)
+    !print*, d_m
     ! do ii=1, N
     !     if (order(ii) .le. N/2) then 
     !         print'(3(F9.2,x))', evec_m(order(ii)+N/2,:)
@@ -114,8 +132,9 @@ program dsaupd_mkl
     ! print*,''
 
     call Magnetization(evec_p(:,1),evec_m(:,1), mag_x)
-    print*, mag_x
+    !print*, mag_x
 
+    call out()
     contains
     subroutine set_variables(ispin, order, spin_z, ell)
         implicit none
@@ -359,15 +378,72 @@ program dsaupd_mkl
             do jj =1, N
                 jord=order(jj)
                 exc=order(jj+2**(ii-1)*(1-2*ispin(jj,ii)))
-                if (exc .le. N/2) then 
-                    !print*, jord, exc+N/2
-                    mag_x(ii)=mag_x(ii)+psi_0(jord)*psi_1(exc+N/2)
-                else
-                    !print*, jord, exc-N/2
+                if ((jord .le. N/2) .and. (exc .gt. N/2)) then
                     mag_x(ii)=mag_x(ii)+psi_0(jord)*psi_1(exc-N/2)
                 endif
             enddo
         enddo
     end subroutine
+
+    subroutine out()
+        implicit none
+        logical :: exist
+      
+        inquire(file="chain.out", exist=exist)
+        if (exist) then
+          open(12, file="chain.out", status="old", position="append", action="write")
+        else
+          open(12, file="chain.out", status="new", action="write")
+          write(12,'(A44)') "L, g, E_p0, E_p1, E_p2, E_m0, E_m1, E_m2, Mx"
+        end if
+
+        write(12,'(I4,8(",",ES21.14))') ell, gfield, d_p, d_m, mag_x(1)
+        close(12)
+
+    end subroutine
+
+    subroutine reorder(d, evec, N, nev)
+        implicit none
+        integer, intent(in) :: N, nev
+        real(8), intent(inout) :: d(:)
+        real(8), intent(inout) :: evec(:,:)
+
+        real(8) :: rtemp, atemp(N)
+        logical :: exc
+        integer :: i
+
+        exc=.true.
+        do while (exc)      ! exc signals if along the array there was at least one swap
+            exc=.false.
+            do i = 1, nev-1
+                if (d(i)>d(i+1)) then
+                    call dswap(d(i), d(i+1))
+                    call aswap(evec(:,i), evec(:,i+1),N)
+                    exc=.true.
+                endif
+            enddo
+        enddo
+        
+    end subroutine
+
+        subroutine dswap (x,y)
+            implicit none
+            real(8),intent(inout) :: x,y
+    
+            real(8) :: c
+            c=x
+            x=y
+            y=c
+        end subroutine
+        subroutine aswap (x,y,n)
+            implicit none
+            real(8),intent(inout) :: x(:),y(:)
+            integer, intent(in) :: n
+
+            real(8) :: c(n)
+            c=x
+            x=y
+            y=c
+        end subroutine
 end program dsaupd_mkl
 
