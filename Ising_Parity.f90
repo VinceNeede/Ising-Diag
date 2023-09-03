@@ -387,18 +387,18 @@ program dsaupd_mkl
 
     subroutine out()
         implicit none
-        logical :: exist
+        ! logical :: exist
       
-        inquire(file="chain.out", exist=exist)
-        if (exist) then
-          open(12, file="chain.out", status="old", position="append", action="write")
-        else
-          open(12, file="chain.out", status="new", action="write")
-          write(12,'(A44)') "L,g,E_p0,E_p1,E_p2,E_m0,E_m1,E_m2,Mx"
-        end if
+        ! inquire(file="chain.out", exist=exist)
+        ! if (exist) then
+        !   open(12, file="chain.out", status="old", position="append", action="write")
+        ! else
+        !   open(12, file="chain.out", status="new", action="write")
+        !   write(12,'(A44)') "L,g,E_p0,E_p1,E_p2,E_m0,E_m1,E_m2,Mx"
+        ! end if
 
-        write(12,'(I4,8(",",ES21.14))') ell, gfield, d_p, d_m, mag_x(1)
-        close(12)
+        write(*,'(I4,8(",",ES21.14))') ell, gfield, d_p, d_m, mag_x(1)
+!        close(12)
 
     end subroutine
 
