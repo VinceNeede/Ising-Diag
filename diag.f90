@@ -99,7 +99,7 @@ module diagonalization
     !     %------------------------------------------------------%
     !
     implicit none
-    integer, parameter :: max_ell=20, maxn=2**max_ell, maxnev=10, maxncv=25, ldv=maxn
+    integer, parameter :: max_ell=23, maxn=2**max_ell, maxnev=10, maxncv=25, ldv=maxn
     integer, parameter :: rk=8
     !
     !     %--------------%
