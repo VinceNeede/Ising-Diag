@@ -8,6 +8,8 @@ start=0.
 end=2.
 npoints=20
 
+fileout="fixed_g_1.out"
+
 x=np.linspace(start, end, npoints)
 fx=norm_pdf(x)
 g=0
@@ -32,20 +34,27 @@ if 1. not in x_density:
 # plt.show()
 
 import subprocess
+import os
 
-
-for ispin in range(3,10):
-    for gfield in x_density:
-        f=open("chain.in", "w")
-        f.write(
+if os.path.isfile(fileout):
+    fout=open(fileout,"a")
+else:
+    fout=open(fileout,"w")
+    fout.write("L,g,E_p0,E_p1,E_p2,E_m0,E_m1,E_m2,Mx\n")
+gfield=1.
+for ispin in range(23,24):
+    f=open("chain.in", "w")
+    f.write(
 f"{ispin}	    ! Number of spins in the system		(ell)\n\
 {gfield}d0	! Transverse magnetic field strength	(g)\n\
 0.d0	! Longitudinal magnetic field strength	(h)\n\
 .true.	! Type of boundary conditions  		(.true. -> PBC,        .false. -> OBC)\n\
 .true.	! Type of diagonalization      		(.true. -> Davidson,   .false. -> Lapack full diag) NOT IMPLEMENTED\n"\
-            )
-        f.close()
-        p=subprocess.Popen("./_results/Ising_Parity", shell=True, stdout=subprocess.PIPE)
-        out=p.communicate()[0].decode()
-        if (out!=""):
-            print(ispin, gfield, out)
+        )
+    f.close()
+    p=subprocess.Popen("./_results/Ising_Parity", shell=True, stdout=subprocess.PIPE)
+    out=p.communicate()[0].decode()
+    #if (out!=""):
+    #    print(ispin, gfield, out)
+    fout.write(out)
+fout.close()
