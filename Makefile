@@ -3,41 +3,60 @@ ifndef FILENAME
 endif
 
 ifndef OUTDIR
-    OUTDIR="_results"
+    OUTDIR=_results/
 endif
 
-PATHINCLUDE="/opt/intel/oneapi/mkl/latest/include"
+PATHINCLUDE="${MKLROOT}\include"
+FLAGS = -i8 -O3 -static#-fast -msse4.2 -axAVX,CORE-AVX2
 
-PATHLIB="/opt/intel/oneapi/mkl/latest/lib/intel64"
-FLAGS = -O3 -static #-fast -msse4.2 -axAVX,CORE-AVX2
-
+ifeq ($(OS),Windows_NT)
+STATICLIB= mkl_intel_ilp64.lib mkl_intel_thread.lib mkl_core.lib libiomp5md.lib /link /LIBPATH:"C:/Program Files (x86)/arpack/lib/" arpackILP64.lib /NODEFAULTLIB:MSVCRT
+INCLUDEOP= /4I8  -I"%MKLROOT%\include"
+OPTIONS=-warn:all -module:${OUTDIR}
+VOIDLINE=@echo.
+else
 STATICLIB= /usr/local/lib/libarpackILP64.a ${MKLROOT}/lib/intel64/libmkl_blas95_ilp64.a ${MKLROOT}/lib/intel64/libmkl_lapack95_ilp64.a -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_ilp64.a ${MKLROOT}/lib/intel64/libmkl_intel_thread.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lmkl_intel_ilp64 -liomp5 -lpthread -lm -ldl
 INCLUDEOP=-I${MKLROOT}/include/intel64/ilp64 -i8  -I"${MKLROOT}/include" -I/usr/local/lib
+OPTIONS=-warn all -module ${OUTDIR}
+VOIDLINE=@echo ""
+endif
+
 
 compile: check_dir compile_spblas compile_lib
 	@echo "Compiling Ising"
-	@ifx $(FLAGS) -i8 -warn all -module ${OUTDIR} -fpp  -I$(PATHINCLUDE) -w  Ising.f90 -c -o ${OUTDIR}/Ising.o
-	@ifx $(FLAGS) -i8 -warn all -module ${OUTDIR} -fpp -w ${OUTDIR}/Ising.o ${OUTDIR}/diag.o ${OUTDIR}/mkl_spblas.o -o ${OUTDIR}/Ising ${INCLUDEOP} ${STATICLIB}
+	@ifx $(FLAGS) ${OPTIONS} -fpp  -I$(PATHINCLUDE) -w  Ising.f90 -c -o ${OUTDIR}/Ising.o
+	@ifx $(FLAGS) ${OPTIONS} -fpp -w ${OUTDIR}/Ising.o ${OUTDIR}/diag.o ${OUTDIR}/mkl_spblas.o -o ${OUTDIR}/Ising ${INCLUDEOP} ${STATICLIB}
 	@echo "Ising compiled"
-	@echo ""
+	$(VOIDLINE)
 
 	@echo "Compiling Ising_Parity"
-	@ifx $(FLAGS) -i8 -warn all -module ${OUTDIR} -fpp  -I$(PATHINCLUDE) -w  Ising_Parity.f90 -c -o ${OUTDIR}/Ising_Parity.o
-	@ifx $(FLAGS) -i8 -warn all -module ${OUTDIR} -fpp -w ${OUTDIR}/Ising_Parity.o ${OUTDIR}/diag.o ${OUTDIR}/mkl_spblas.o -o ${OUTDIR}/Ising_Parity ${INCLUDEOP} ${STATICLIB}
+	@ifx $(FLAGS) ${OPTIONS} -fpp  -I$(PATHINCLUDE) -w  Ising_Parity.f90 -c -o ${OUTDIR}/Ising_Parity.o
+	@ifx $(FLAGS) ${OPTIONS} -fpp -w ${OUTDIR}/Ising_Parity.o ${OUTDIR}/diag.o ${OUTDIR}/mkl_spblas.o -o ${OUTDIR}/Ising_Parity ${INCLUDEOP} ${STATICLIB}
 	@echo "Ising_Parity compiled"
 	
-	@echo ""
+	$(VOIDLINE)
 	@echo "Compiled Succesfully"
-compile_lib:
+compile_lib: check_dir compile_spblas
 	@echo "Compiling Library diagonalization"
-	@ifx $(FLAGS) -i8 -warn all -module ${OUTDIR} -fpp  -I$(PATHINCLUDE) -w  diag.f90 -c -o ${OUTDIR}/diag.o
+	@ifx $(FLAGS) ${OPTIONS} -fpp  -I$(PATHINCLUDE) -w  diag.f90 -c -o ${OUTDIR}/diag.o
 	@echo "Library diagonalization compiled"
-	@echo ""
+	$(VOIDLINE)
 
-compile_spblas:
+compile_spblas: 
 	@echo "compiling MKL_SPBLAS"
-	@ifx $(FLAGS) -i8 -warn all -module ${OUTDIR} -fpp  -I$(PATHINCLUDE) -w  $(PATHINCLUDE)/mkl_spblas.f90 -c -o ${OUTDIR}/mkl_spblas.o 
+	@ifx $(FLAGS) ${OPTIONS} -fpp  -I$(PATHINCLUDE) -w  $(PATHINCLUDE)/mkl_spblas.f90 -c -o ${OUTDIR}/mkl_spblas.o 
 	@echo "MKL_SPBLAS compiled"
-	@echo ""
+	$(VOIDLINE)
+
 check_dir:
-	@[ -d "${OUTDIR}" ] || mkdir ${OUTDIR}
+	@echo "Checking for directory existence..."
+ifeq ($(OS),Windows_NT)
+	@if not exist "$(OUTDIR)" ( \
+		mkdir $(OUTDIR); \
+	) 
+else
+	@if [ ! -d "$(OUTDIR)" ]; then \
+		mkdir $(OUTDIR); \
+	fi
+endif
+#@[ -d "${OUTDIR}" ] || mkdir ${OUTDIR}
