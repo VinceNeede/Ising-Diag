@@ -11,14 +11,22 @@ import pandas as pd
 
 data=pd.read_csv("critic g/g_max.dat")
 
-def fun(g,ell):
-    E_p, E_m, mag=Ising(ell,g,0.0,True,True)
+def fun(h,ell,g=1.0):
+    E, mag=Ising(ell,g,h,True,False)
     return mag
 fout=open("suscettività/susc_fixed_g.dat","w")
 fout.write("L,g,chi\n")
 from tqdm import tqdm
-for ispin,gfield in zip(data['L'],data['g_max']):
-    f1=nd.Derivative(lambda x: fun(x,ispin), n=1, step=1.e-5)
-    fout.write(str(ispin)+','+str(gfield)+','+str(f1(gfield))+'\n')
-    fout.flush()
+
+def fun1(x,ell,h):
+    return (fun(x+h,ell) - fun(x-h,ell))/(2*h)
+from tqdm import tqdm
+
+print(fun(0.5,12), fun(-0.5,12))
+
+for ispin,gfield in tqdm(zip(data['L'],data['g_max'])):
+    if ispin<18:
+        f1=nd.Derivative(lambda x: fun(x,ispin,1.), n=1, step=1.e-5,method='forward')  
+        fout.write(str(ispin)+','+str(gfield)+','+str(f1(0.))+'\n')
+        fout.flush()
 fout.close()
