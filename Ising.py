@@ -36,8 +36,14 @@ f"{ell}	    ! Number of spins in the system		(ell)\n\
         mag=abs(np.double(out.pop(0)))
         return E_p, E_m, mag        
     E=np.array([np.double(out.pop(0)) for _ in range(3)])
-    mag=abs(np.double(out.pop(0)))
-    return E, mag
+    broken_mag=np.abs(np.double(out.pop(0)))
+    if PBC:
+        long_mag=np.array([np.double(out.pop(0)) for _ in range(ell)])
+        tran_mag=np.array([np.double(out.pop(0)) for _ in range(ell)])
+    else:
+        long_mag=np.double(out.pop(0))
+        tran_mag=np.double(out.pop(0))
+    return E, broken_mag, long_mag, tran_mag
 
 """ def Ising_Parity(ell: int, gfield: float, PBC: bool):
     f=open("chain.in", "w")

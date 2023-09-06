@@ -15,13 +15,13 @@ program dsaupd_mkl
     implicit none
     integer, allocatable :: iSpin(:,:), spin_z(:)
     integer:: ell, N, nev, ncv, nnz
-    real(8) :: d(3), mag
+    real(8) :: d(3), broken_mag
     real(8),allocatable :: evec(:,:)
     
     type(SPARSE_MATRIX_T) :: A
     TYPE(MATRIX_DESCR) :: descrA
     integer,allocatable :: row(:), col(:)
-    real(8), allocatable :: val(:)
+    real(8), allocatable :: val(:), magX(:), magZ(:)
     
     !   %--------------------------------------%
     !   | Import the parameteres from the      |
@@ -41,7 +41,7 @@ program dsaupd_mkl
     allocate(row(nnz), col(nnz), val(nnz))
     
     !call system_clock(count=t0)
-    allocate(iSpin(N,ell), spin_z(N))
+    allocate(iSpin(N,ell), spin_z(N), magX(ell), magz(ell))
     
     !   %---------------------------------------%
     !   | Call the set_variables subroutine     |
@@ -99,10 +99,10 @@ program dsaupd_mkl
     !   | smallest.                             |
     !   %---------------------------------------%
     
-    call Magnetization(evec(:,1), mag)
+    call Magnetization(evec(:,1), broken_mag, magX, magZ)
     
-    write(*,'(I4,5(",",ES21.14))') ell, gfield, d, mag
-
+    call out()
+    
     
     contains
     
@@ -258,20 +258,40 @@ program dsaupd_mkl
         descrA % diag = SPARSE_DIAG_NON_UNIT
     end subroutine
     
-    subroutine Magnetization(psi, mag)
+    subroutine Magnetization(psi, broken_mag,magx, magz)
         implicit none
         real(8), intent(in) :: psi(:)
-        real(8), intent(out) ::  mag
+        real(8), intent(out) ::  broken_mag, magx(:), magz(:)
         
-        integer :: ii
+        integer :: ii, jj
         
-        mag=0.d0
+        broken_mag=0.d0
         do ii = 1,N
-            mag=mag+abs(spin_z(ii))*abs(psi(ii))**2
+            broken_mag=broken_mag+abs(spin_z(ii))*abs(psi(ii))**2
         enddo
-        mag=mag/ell
+        do ii=1,ell
+            magz(ii)=0.d0
+            magx(ii)=0.d0
+            do jj=1,N
+                magz(ii)=magz(ii)-(1-2*iSpin(jj,ii))*abs(psi(jj))**2
+                magx(ii)=magx(ii)-psi(jj)*psi(jj+2**(ii-1)*(1-2*ispin(jj,ii)))
+            enddo
+        enddo
+        broken_mag=broken_mag/ell
     end subroutine Magnetization
     
+    subroutine out()
+        implicit none
+        
+        
+        if (PBC) then
+            write(*,'(I4,7(",",ES21.14))') ell, gfield, d, broken_mag, magz(1), magX(1)
+        else
+            write(*,100) ell, gfield, d, broken_mag, magz, magX
+100   Format(I4,<5+2*ell>(",",ES21.14))
+        endif
+        
+    end subroutine out
     
     subroutine reorder(d, evec, N, nev)
         implicit none
