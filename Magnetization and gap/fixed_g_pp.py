@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-data=pd.read_csv("fixed_g_1.out")
+data=pd.read_csv("Magnetization and gap/fixed_g_1.out")
 fig, axs = plt.subplots(2)
 
 axs[0].plot(data['L'], np.abs(data['Mx']))

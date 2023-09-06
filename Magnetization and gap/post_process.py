@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-data=pd.read_csv("chain.out")
+data=pd.read_csv("Magnetization and gap/chain.out")
 fig, axs = plt.subplots(2)
 
 for ispin in range(3,20):
