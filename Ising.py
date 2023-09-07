@@ -5,7 +5,7 @@ import sys
 if sys.platform=='linux':
     indir='./Linux_results/'
 else:
-    indir='win_results/'
+    indir='.\\win_results\\'
 
 np.set_printoptions(precision=15)
 
@@ -66,3 +66,33 @@ f"{ell}	    ! Number of spins in the system		(ell)\n\
 
 if __name__=='__main__':
     print(Ising(15,0.2, 0.5, False, parity=False))
+
+
+
+
+
+
+
+import os
+def automatic_sampler (Ls, gfields, hfields, PBC: bool, parity:bool):
+    #Idea: Ls, gfields, hfields can also be a single number, rather than an one-dimensional array. In that case, that variable is fixed.
+    
+    OUTPUTFILE="computed_stuff.out"
+    if os.path.isfile(OUTPUTFILE):
+        fout=open(OUTPUTFILE,"a")
+    else:
+        fout=open(OUTPUTFILE,"w")
+        fout.write("L,g,h,E_ground,long_mag,trans_mag\n") #Qui ho deciso di mettere solo queste variabili e solo in questo ordine, poi giustamente se tu vuoi cambiarlo o se vuoi aggiungere altre energie oltre a quella di ground ne parliamo e possiamo modificare questa funzione di prova
+    
+    for L in Ls:
+        for gfield in gfields:
+            for hfield in hfields:
+                Es, broken_mag, long_mag, trans_mag=Ising(L, gfield, hfield, PBC, parity)
+                E_ground=Es[0]
+                
+                newrow= f"{L},{gfield},{hfield},{E_ground},{long_mag},{trans_mag}\n"
+                fout.write(newrow)
+    
+
+    fout.close()
+    return 0
