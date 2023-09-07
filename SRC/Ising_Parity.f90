@@ -21,7 +21,7 @@ program dsaupd_mkl
     type(SPARSE_MATRIX_T) :: A_p, A_m
     TYPE(MATRIX_DESCR) :: descrA
     integer, allocatable :: row_p(:), col_p(:), row_m(:), col_m(:)
-    real(8), allocatable :: val_p(:), val_m(:), mag_x(:)
+    real(8), allocatable :: val_p(:), val_m(:), mag_x(:), mag_Z0(:), mag_z1(:)
     
     !   %--------------------------------------%
     !   | Import the parameteres from the      |
@@ -43,7 +43,7 @@ program dsaupd_mkl
     allocate(iSpin(N,ell), spin_z(N), order(N))
     allocate(row_p(nnz), row_m(nnz), col_p(nnz), col_m(nnz)&
     , val_p(nnz), val_m(nnz))
-
+    
     call set_variables(iSpin, order, spin_z, ell)    
     !   %---------------------------------------%
     !   | Call the Build_Ham subroutine which   |
@@ -90,12 +90,12 @@ program dsaupd_mkl
     
     nev = 3
     ncv = min(n/2,20)
-
-    allocate(evec_p(N,nev), evec_m(N,nev), mag_x(ell))
-
+    
+    allocate(evec_p(N,nev), evec_m(N,nev), mag_x(ell), mag_z0(ell), mag_z1(ell))
+    
     call dlanc(A_p, descrA, n/2, nev, ncv, 'I', 'SA', d_p, evec=evec_p)
-
-
+    
+    
     ! do ii=1, N
     !     if (order(ii) .gt. N/2) then
     !         print '(3(F9.2,x))', 0.d0,0.d0,0.d0
@@ -110,7 +110,7 @@ program dsaupd_mkl
     !     print'(3(F9.2,x))', evec_p(order(ii),:)
     ! enddo
     ! print*,''
-
+    
     call dlanc(A_m, descrA, n/2, nev, ncv, 'I', 'SA', d_m, evec=evec_m)
     ! do ii=1, N
     !     if (order(ii) .le. N/2) then 
@@ -130,10 +130,10 @@ program dsaupd_mkl
     !     endif
     ! enddo
     ! print*,''
-
-    call Magnetization(evec_p(:,1),evec_m(:,1), mag_x)
+    
+    call Magnetization(evec_p(:,1),evec_m(:,1), mag_x, mag_Z0, mag_z1)
     !print*, mag_x
-
+    
     call out()
     contains
     subroutine set_variables(ispin, order, spin_z, ell)
@@ -301,7 +301,7 @@ program dsaupd_mkl
                 indx = Order(indx)
                 Exc = Order(kk)
                 if (indx<=N/2 .and. Exc<=N/2) then
-                   
+                    
                     iarr_p=iarr_p+1
                     row_p(iarr_p) = minval([indx, Exc])
                     col_p(iarr_p) = maxval([indx, Exc])
@@ -347,13 +347,13 @@ program dsaupd_mkl
         descrA % diag = SPARSE_DIAG_NON_UNIT
         
     end subroutine
-
-    subroutine Magnetization(psi_0, psi_1, mag_x)
+    
+    subroutine Magnetization(psi_0, psi_1, mag_x, mag_z0, mag_z1)
         implicit none
         real(8), intent(in) :: psi_0(:)
         real(8), intent(in) :: psi_1(:)
-        real(8), intent(out) :: mag_x(:)
-
+        real(8), intent(out) :: mag_x(:), mag_z0(:), mag_z1(:)
+        
         !   %---------------------------------------%
         !   | Here we compute the magnetization of  |
         !   | ground state by computing:            |
@@ -370,25 +370,32 @@ program dsaupd_mkl
         !   | permuted one, so we have to permute it|
         !   | back.                                 |
         !   %---------------------------------------%
-
+        
         integer :: ii, jj, jord, exc
         
         do ii =1, ell
             mag_x(ii)=0.d0
+            mag_z0(ii)=0.d0
+            mag_z1(ii)=0.d0
             do jj =1, N
                 jord=order(jj)
                 exc=order(jj+2**(ii-1)*(1-2*ispin(jj,ii)))
-                if ((jord .le. N/2) .and. (exc .gt. N/2)) then
-                    mag_x(ii)=mag_x(ii)+psi_0(jord)*psi_1(exc-N/2)
+                if (jord .le. N/2) then
+                    mag_Z0(ii)=mag_Z0(ii) + (1-2*iSpin(jj,ii))*abs(psi_0(jord))**2
+                    if (exc .gt. N/2) then
+                        mag_x(ii)=mag_x(ii)+psi_0(jord)*psi_1(exc-N/2)
+                    endif
+                else
+                    mag_Z1(ii)=mag_Z1(ii) + (1-2*iSpin(jj,ii))*abs(psi_1(jord-N/2))**2
                 endif
             enddo
         enddo
     end subroutine
-
+    
     subroutine out()
         implicit none
         ! logical :: exist
-      
+        
         ! inquire(file="chain.out", exist=exist)
         ! if (exist) then
         !   open(12, file="chain.out", status="old", position="append", action="write")
@@ -396,22 +403,25 @@ program dsaupd_mkl
         !   open(12, file="chain.out", status="new", action="write")
         !   write(12,'(A44)') "L,g,E_p0,E_p1,E_p2,E_m0,E_m1,E_m2,Mx"
         ! end if
-
-        write(*,'(I4,8(",",ES21.14))') ell, gfield, d_p, d_m, mag_x(1)
-!        close(12)
-
+        if (PBC) then
+            write(*,'(I4,10(",",ES21.14))') ell, gfield, d_p, d_m, mag_x(1), mag_z0(1),mag_z1(1)
+        else
+            write(*,100) ell, gfield, d_p, d_m, mag_x, mag_z0, mag_z1
+100   Format(I4,<7+3*ell>(",",ES21.14))
+        endif
+        
     end subroutine
-
+    
     subroutine reorder(d, evec, N, nev)
         implicit none
         integer, intent(in) :: N, nev
         real(8), intent(inout) :: d(:)
         real(8), intent(inout) :: evec(:,:)
-
+        
         real(8) :: rtemp, atemp(N)
         logical :: exc
         integer :: i
-
+        
         exc=.true.
         do while (exc)      ! exc signals if along the array there was at least one swap
             exc=.false.
@@ -425,25 +435,25 @@ program dsaupd_mkl
         enddo
         
     end subroutine
-
-        subroutine dswap (x,y)
-            implicit none
-            real(8),intent(inout) :: x,y
     
-            real(8) :: c
-            c=x
-            x=y
-            y=c
-        end subroutine
-        subroutine aswap (x,y,n)
-            implicit none
-            real(8),intent(inout) :: x(:),y(:)
-            integer, intent(in) :: n
-
-            real(8) :: c(n)
-            c=x
-            x=y
-            y=c
-        end subroutine
+    subroutine dswap (x,y)
+        implicit none
+        real(8),intent(inout) :: x,y
+        
+        real(8) :: c
+        c=x
+        x=y
+        y=c
+    end subroutine
+    subroutine aswap (x,y,n)
+        implicit none
+        real(8),intent(inout) :: x(:),y(:)
+        integer, intent(in) :: n
+        
+        real(8) :: c(n)
+        c=x
+        x=y
+        y=c
+    end subroutine
 end program dsaupd_mkl
 
