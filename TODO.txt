@@ -1,1 +1,0 @@
--Add evaluation of the ground state magnetization
