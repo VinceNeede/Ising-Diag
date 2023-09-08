@@ -153,25 +153,26 @@ f"{ell}	    ! Number of spins in the system		(ell)\n\
         res.broken_mag=broken_mag
         res.tran_mag_p=tran_mag_p
         res.tran_mag_m=tran_mag_m
-        return res    
-    E=np.array([np.double(out.pop(0)) for _ in range(3)])
-    broken_mag=np.abs(np.double(out.pop(0)))
-    if PBC:
-        long_mag=np.array([np.double(out.pop(0)) for _ in range(ell)])
-        tran_mag=np.array([np.double(out.pop(0)) for _ in range(ell)])
+        return res
     else:
-        long_mag=np.double(out.pop(0))
-        tran_mag=np.double(out.pop(0))
-    res=Ising_Result()
-    res.ell=ell
-    res.long_field=hfield
-    res.tran_field=gfield
-    res.PBC=PBC
-    res.E=E
-    res.broken_mag=broken_mag
-    res.long_mag=long_mag
-    res.tran_mag=tran_mag
-    return res
+        E=np.array([np.double(out.pop(0)) for _ in range(3)])
+        broken_mag=np.abs(np.double(out.pop(0)))
+        if PBC:
+            long_mag=np.double(out.pop(0))
+            tran_mag=np.double(out.pop(0))
+        else:
+            long_mag=np.array([np.double(out.pop(0)) for _ in range(ell)])
+            tran_mag=np.array([np.double(out.pop(0)) for _ in range(ell)])
+        res=Ising_Result()
+        res.ell=ell
+        res.long_field=hfield
+        res.tran_field=gfield
+        res.PBC=PBC
+        res.E=E
+        res.broken_mag=broken_mag
+        res.long_mag=long_mag
+        res.tran_mag=tran_mag
+        return res
 
 """ def Ising_Parity(ell: int, gfield: float, PBC: bool):
     f=open("chain.in", "w")
