@@ -204,6 +204,10 @@ if __name__=='__main__':
 
 import os
 def automatic_sampler (Ls, gfields, hfields, PBC: bool, parity:bool):
+    from collections.abc import Iterable
+    print("IT IS WIDELY SUGGESTED TO BUILD YOUR OWN SAMPLER AND USE THIS ONE ONLY AS AN EXAMPLE")
+    if parity:
+        print("It can raise some errors if parity=True given the difference in the outputs variables")
     #Idea: Ls, gfields, hfields can also be a single number, rather than an one-dimensional array. In that case, that variable is fixed.
     
     OUTPUTFILE="computed_stuff.out"
@@ -213,14 +217,15 @@ def automatic_sampler (Ls, gfields, hfields, PBC: bool, parity:bool):
         fout=open(OUTPUTFILE,"w")
         fout.write("L,g,h,E_ground,long_mag,trans_mag\n") #Qui ho deciso di mettere solo queste variabili e solo in questo ordine, poi giustamente se tu vuoi cambiarlo o se vuoi aggiungere altre energie oltre a quella di ground ne parliamo e possiamo modificare questa funzione di prova
     
-    for L in Ls:
-        for gfield in gfields:
-            for hfield in hfields:
-                Es, broken_mag, long_mag, trans_mag=Ising(L, gfield, hfield, PBC, parity)
-                E_ground=Es[0]
+    for L in Ls if isinstance(Ls,Iterable) else [Ls]:
+        for gfield in gfields if isinstance(gfields,Iterable) else [gfields]:
+            for hfield in hfields if isinstance(hfields,Iterable) else [hfields]:
+                res=Ising(L, gfield, hfield, PBC, parity)
+                E_ground=res.E[0]
                 
-                newrow= f"{L},{gfield},{hfield},{E_ground},{long_mag},{trans_mag}\n"
+                newrow= f"{res.ell},{res.tran_field},{res.long_field},{E_ground},{res.long_mag},{res.tran_mag}\n"
                 fout.write(newrow)
+                fout.flush()
     
 
     fout.close()
