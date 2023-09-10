@@ -10,13 +10,32 @@ sys.path.append("./")
 from Ising import Ising, Ising_Result
 
 
-Ls=range(10,11)
+Ls=range(17,18)
 gs=np.linspace(0.0,1.0,11)
-def hs(L):
+import pandas as pd
 
-    hs_pos=np.logspace(start= np.log10(2e-6), stop=np.log10(1e-4), num=55)
-    hs_neg=-hs_pos
-    hs=np.sort(np.concatenate((hs_pos,hs_neg)))
+
+print("before hcrits")
+hcrits=pd.read_csv("First_Order_Transition/critical_h/predicted_critical_hs.out", sep=",")
+print(hcrits)
+
+
+def h_critfunction(L):
+    if 3 <= L <= 24:
+        # Check if L is within the valid range
+        row = hcrits[hcrits['L'] == L]  # Find the row where L matches
+        if not row.empty:
+            return row.iloc[0]['h_crit']  # Return the corresponding h_crit value
+        else:
+            return "L value not found in the DataFrame"
+    else:
+        return "L is outside the valid range"
+
+
+def hs(L):
+    hcrit=h_critfunction(L)
+    hs_pos=np.logspace(start= np.log10(hcrit*0.1), stop=np.log10(hcrit*1000), num=40)
+    hs=np.sort(hs_pos)
     return hs
 
 
