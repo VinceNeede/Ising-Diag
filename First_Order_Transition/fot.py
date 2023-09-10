@@ -10,11 +10,11 @@ sys.path.append("./")
 from Ising import Ising, Ising_Result
 
 
-Ls=range(11,12)
+Ls=range(10,11)
 gs=np.linspace(0.0,1.0,11)
 def hs(L):
 
-    hs_pos=np.linspace(start= 4.11e-5, stop=0.00019, num=11)
+    hs_pos=np.logspace(start= np.log10(2e-6), stop=np.log10(1e-4), num=55)
     hs_neg=-hs_pos
     hs=np.sort(np.concatenate((hs_pos,hs_neg)))
     return hs

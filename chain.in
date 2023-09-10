@@ -1,5 +1,5 @@
-11	    ! Number of spins in the system		(ell)
+10	    ! Number of spins in the system		(ell)
 1.0	! Transverse magnetic field strength	(g)
-0.00019	! Longitudinal magnetic field strength	(h)
+0.0001	! Longitudinal magnetic field strength	(h)
 .true.	! Type of boundary conditions  		(.true. -> PBC,        .false. -> OBC)
 .true.	! Type of diagonalization      		(.true. -> Davidson,   .false. -> Lapack full diag) NOT IMPLEMENTED
