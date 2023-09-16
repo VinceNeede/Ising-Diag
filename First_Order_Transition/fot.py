@@ -10,7 +10,7 @@ sys.path.append("./")
 from Ising import Ising, Ising_Result
 
 
-Ls=range(17,18)
+Ls=range(3,10)
 gs=np.linspace(0.0,1.0,11)
 import pandas as pd
 
@@ -32,11 +32,15 @@ def h_critfunction(L):
         return "L is outside the valid range"
 
 
-def hs(L):
+def hs111(L):
     hcrit=h_critfunction(L)
     hs_pos=np.logspace(start= np.log10(hcrit*0.1), stop=np.log10(hcrit*1000), num=40)
     hs=np.sort(hs_pos)
     return hs
+
+
+def hs(L):
+    return np.logspace(np.log10(0.005),np.log10(5), 40)
 
 
 
