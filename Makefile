@@ -2,7 +2,7 @@ ifndef FILENAME
     FILENAME=""
 endif
 
-FLAGS = -i8 -O3 -static#-fast -msse4.2 -axAVX,CORE-AVX2
+FLAGS = -i8 -r8 -O3 -static#-fast -msse4.2 -axAVX,CORE-AVX2
 
 ifeq ($(OS),Windows_NT)
 STATICLIB= mkl_intel_ilp64.lib mkl_intel_thread.lib mkl_core.lib libiomp5md.lib /link /LIBPATH:"C:/Program Files (x86)/arpack/lib/" arpackILP64.lib /NODEFAULTLIB:MSVCRT
@@ -26,17 +26,10 @@ endif
 
 
 compile: check_dir compile_spblas compile_lib
-	@echo "Compiling Ising"
-	@ifx $(FLAGS) ${OPTIONS} -fpp  -I$(PATHINCLUDE) -w  SRC/Ising.f90 -c -o ${OUTDIR}/Ising.o
-	@ifx $(FLAGS) ${OPTIONS} -fpp -w ${OUTDIR}/Ising.o ${OUTDIR}/diag.o ${OUTDIR}/mkl_spblas.o -o ${OUTDIR}/Ising ${INCLUDEOP} ${STATICLIB}
-	@echo "Ising compiled"
-	$(VOIDLINE)
-
-	@echo "Compiling Ising_Parity"
-	@ifx $(FLAGS) ${OPTIONS} -fpp  -I$(PATHINCLUDE) -w  SRC/Ising_Parity.f90 -c -o ${OUTDIR}/Ising_Parity.o
-	@ifx $(FLAGS) ${OPTIONS} -fpp -w ${OUTDIR}/Ising_Parity.o ${OUTDIR}/diag.o ${OUTDIR}/mkl_spblas.o -o ${OUTDIR}/Ising_Parity ${INCLUDEOP} ${STATICLIB}
-	@echo "Ising_Parity compiled"
-	
+	@echo "Compiling Quenching"
+	@ifx $(FLAGS) ${OPTIONS} -fpp  -I$(PATHINCLUDE) -w  SRC/quenching.f90 -c -o ${OUTDIR}/quenching.o
+	@ifx $(FLAGS) ${OPTIONS} -fpp -w ${OUTDIR}/quenching.o ${OUTDIR}/diag.o ${OUTDIR}/mkl_spblas.o -o ${OUTDIR}/quenching ${INCLUDEOP} ${STATICLIB}
+	@echo "Quenching compiled"
 	$(VOIDLINE)
 	@echo "Compiled Succesfully"
 compile_lib: check_dir compile_spblas

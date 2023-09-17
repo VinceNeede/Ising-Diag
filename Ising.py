@@ -111,68 +111,39 @@ class Ising_Result(IRes):
         
         
 
-def Ising(ell: int, gfield: np.double, hfield:np.double, PBC: bool, parity: bool):
-    if parity:
-        if hfield!=0.:
-            print("WARNING: hfield has to be zero in order to implement the parity simmetry")
-        fileout='Ising_Parity'
-    else:
-        fileout='Ising'
-        
+def quenching(ell: int, gfield0: np.double, gfield1: np.double, hfield:np.double, theta: np.double, PBC: bool):
+    fileout="quenching"        
     f=open("chain.in", "w")
     f.write(
 f"{ell}	    ! Number of spins in the system		(ell)\n\
-{gfield}	! Transverse magnetic field strength	(g)\n\
+{gfield0}	! Transverse magnetic field strength	(g)\n\
+{gfield1}	! Transverse magnetic field strength	(g)\n\
 {hfield}	! Longitudinal magnetic field strength	(h)\n\
+{theta}	! Transverse magnetic field strength	(g)\n\
 .{'true' if PBC else 'false'}.	! Type of boundary conditions  		(.true. -> PBC,        .false. -> OBC)\n\
 .true.	! Type of diagonalization      		(.true. -> Davidson,   .false. -> Lapack full diag) NOT IMPLEMENTED\n"\
         )
     f.close()
     p=subprocess.Popen(indir+fileout, shell=True, stdout=subprocess.PIPE)
     out=p.communicate()[0].decode().replace('\n','').split(sep=',')
-    out_ell=float(out.pop(0))
-    out_gfield=float(out.pop(0))
-    if parity:
-        E_p=np.array([np.double(out.pop(0)) for _ in range(3)],dtype=np.double)
-        E_m=np.array([np.double(out.pop(0)) for _ in range(3)],dtype=np.double)
-        if PBC:
-            broken_mag=np.double(out.pop(0))
-            tran_mag_p=np.double(out.pop(0))
-            tran_mag_m=np.double(out.pop(0))
-        else:
-            broken_mag=np.array([np.double(out.pop(0)) for _ in range(ell)])
-            tran_mag_p=np.array([np.double(out.pop(0)) for _ in range(ell)])
-            tran_mag_m=np.array([np.double(out.pop(0)) for _ in range(ell)])
-        res=Ising_Parity_Result()
-        res.ell=ell
-        res.long_field=hfield
-        res.tran_field=gfield
-        res.PBC=PBC
-        res.E_p=E_p
-        res.E_m=E_m
-        res.broken_mag=broken_mag
-        res.tran_mag_p=tran_mag_p
-        res.tran_mag_m=tran_mag_m
-        return res
+    t=float(out.pop(0))
+    broken_mag=np.abs(np.double(out.pop(0)))
+    if PBC:
+        long_mag=np.double(out.pop(0))
+        tran_mag=np.double(out.pop(0))
     else:
-        E=np.array([np.double(out.pop(0)) for _ in range(3)])
-        broken_mag=np.abs(np.double(out.pop(0)))
-        if PBC:
-            long_mag=np.double(out.pop(0))
-            tran_mag=np.double(out.pop(0))
-        else:
-            long_mag=np.array([np.double(out.pop(0)) for _ in range(ell)])
-            tran_mag=np.array([np.double(out.pop(0)) for _ in range(ell)])
-        res=Ising_Result()
-        res.ell=ell
-        res.long_field=hfield
-        res.tran_field=gfield
-        res.PBC=PBC
-        res.E=E
-        res.broken_mag=broken_mag
-        res.long_mag=long_mag
-        res.tran_mag=tran_mag
-        return res
+        long_mag=np.array([np.double(out.pop(0)) for _ in range(ell)])
+        tran_mag=np.array([np.double(out.pop(0)) for _ in range(ell)])
+    res=Ising_Result()
+    res.ell=ell
+    res.long_field=hfield
+    res.tran_field=gfield0
+    res.PBC=PBC
+    res.E=0.
+    res.broken_mag=broken_mag
+    res.long_mag=long_mag
+    res.tran_mag=tran_mag
+    return res
 
 """ def Ising_Parity(ell: int, gfield: float, PBC: bool):
     f=open("chain.in", "w")
