@@ -5,13 +5,12 @@ from tqdm import tqdm
 sys.path.append('./')
  
 # importing
-from Ising import quenching
-fo=open("quenching.dat","w")
-fo.write("L,mL,theta\n")
-elles=[3,7,8,10]
-thetas=np.linspace(0.,1.,500)
+from Quenching import quenching
+elles=[13]
+kg0=-1.
+kg=1.
+
 for ell in tqdm(elles):
-    for theta in tqdm(thetas,leave=False):
-        res=quenching(ell,0.8,0.9999,0.,theta,PBC=True)
-        fo.write(f"{ell},{res.broken_mag*10**0.125},{theta}\n")
-    fo.flush()
+    g0=kg0/float(ell)+1.
+    g=kg/float(ell)+1.
+    quenching(ell,g0,g,0.,10.,PBC=True,steps=10000,OUTPUTFILE="quench.dat")

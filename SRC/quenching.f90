@@ -41,8 +41,9 @@ end module ODE
 
 MODULE SystemParameters
     !!! This Library contains the variables to be imported 
-    LOGICAL  :: PBC, ctrlDav
+    LOGICAL  :: PBC, ctrlDav, verbose
     DOUBLE PRECISION :: Lambda, gfield0, gfield1, theta
+    integer :: steps
 END MODULE SystemParameters
 
 program dsaupd_mkl
@@ -82,6 +83,8 @@ program dsaupd_mkl
     READ (1,*) theta    ! transverse magnetic field
     READ (1,*) PBC       ! Type of boundary condirions (.true. -> PBC,   .false. -> OBC)
     READ (1,*) ctrlDav   ! Type of diagonalization     (.true. -> Davidson,   .false. -> Lapack full diag)
+    read (1,*) steps    ! Number of steps for the runge-kutta
+    read (1,*) verbose  ! .true. prints each step, .false. prints only the ending step
     CLOSE (unit=1)
     N=2**ell
     nnz = N+ell*2**(ell-1)           ! Interaction XX, gfield over Z, lambdafield over X
@@ -139,35 +142,45 @@ program dsaupd_mkl
     
     allocate(evec(N,nev), E0(nev))
     call dlanc(A, descrA, n, nev, ncv, 'I', 'SA', E0, evec=evec)
-
+    
     allocate(y0(N), y(N))
     do ii = 1, N
         y0(ii)=cmplx(evec(ii,1))
     enddo
     x0=0.
-
+    
     ! call fun(y,y0,0.,N)
-    dx=real(ell)*theta/1000.d0
+    dx=real(ell)*theta/real(steps)
     ! call Runge_Kutta(fun, y0, x0, dx, y, N)
     ! print*,dot_product(y0,y), exp(cmplx(0.,-E0(1)*dx))
-
-    do while (x0 .lt. ell*theta)
-        call Runge_Kutta(fun, y0, x0, dx, y, N)
-        y0=y
-        x0=x0+dx
-    end do
-    call Magnetization(y0, broken_mag, magX, magZ)
-    call out(x0)
-        
+    
+    if (verbose) then
+        do ii =1, steps
+            call Runge_Kutta(fun, y0, x0, dx, y, N)
+            call Magnetization(y, broken_mag, magX, magZ)
+            y0=y
+            x0=x0+dx
+            call out(x0/ell)
+        end do
+    else
+        do ii=1,steps
+            call Runge_Kutta(fun, y0, x0, dx, y, N)
+            y0=y
+            x0=x0+dx
+        end do
+        call Magnetization(y, broken_mag, magX, magZ)
+        call out(x0/ell)
+    endif
+    
     contains
-
+    
     ! subroutine fun2(z, y, x, alpha, N)
     !     integer, intent(in) :: N
     !     Real, Intent(in) :: x, alpha
     !     complex, intent(in) :: y(N)
     !     complex, intent(out) :: z(N)
     !     z=-alpha*y
-
+    
     ! end subroutine fun2
     
     
@@ -235,7 +248,7 @@ program dsaupd_mkl
         real, intent(out) :: val(:)
         complex, intent(out) :: val_cmplx(:)
         integer, intent(in) :: ell, N, nnz
-
+        
         integer :: ii, jj, kk, iarr, stat, indx, start_arr
         
         
@@ -326,19 +339,19 @@ program dsaupd_mkl
         descrA % Mode = SPARSE_FILL_MODE_UPPER
         descrA % diag = SPARSE_DIAG_NON_UNIT
     end subroutine
-
+    
     subroutine fun(z, y, x, N)
         integer, intent(in) :: N
         Real, Intent(in) :: x
         complex, intent(in) :: y(N)
         complex, intent(out) :: z(N)
-
+        
         integer :: stat
         stat=mkl_sparse_z_mv(SPARSE_OPERATION_NON_TRANSPOSE, cmplx(0.,-1.), A_cmplx, descrA, y,(0.,0.), z)
         if (stat .ne. 0) print*, 'error mkl_sparse_d_mv: ', stat
-
+        
     end subroutine fun
-
+    
     subroutine Magnetization(psi, broken_mag,magx, magz)
         implicit none
         complex, intent(in) :: psi(:)
@@ -366,10 +379,10 @@ program dsaupd_mkl
         real, intent(in) :: t
         
         if (PBC) then
-            write(*,'(ES21.14,3(",",ES21.14))') t, broken_mag, magz(1), magX(1)
+            write(*,'(I4,4(",",ES22.14)",",L2,4(",",ES22.14))') ell, gfield0, gfield1, Lambda, theta, PBC, t, broken_mag, magz(1), magX(1)
         else
-            write(*,100) t, broken_mag, magz, magX
-            100   Format((ES21.14),<1+2*ell>(",",ES21.14))
+            write(*,100) ell, gfield0, gfield1, Lambda, theta, PBC, t, broken_mag, magz, magX
+            100   Format((I4,4(",",ES22.14)",",L2,<2+2*ell>(",",ES22.14)))
         endif
         
     end subroutine out    
