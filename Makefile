@@ -28,7 +28,7 @@ endif
 compile: check_dir compile_spblas compile_lib
 	@echo "Compiling Quenching"
 	@ifx $(FLAGS) ${OPTIONS} -fpp  -I$(PATHINCLUDE) -w  SRC/quenching.f90 -c -o ${OUTDIR}/quenching.o
-	@ifx $(FLAGS) ${OPTIONS} -fpp -w ${OUTDIR}/quenching.o ${OUTDIR}/diag.o ${OUTDIR}/mkl_spblas.o -o ${OUTDIR}/quenching ${INCLUDEOP} ${STATICLIB}
+	@ifx $(FLAGS) ${OPTIONS} -fpp -w ${OUTDIR}/quenching.o ${OUTDIR}/diag.o  ${OUTDIR}/mkl_spblas.o -o ${OUTDIR}/quenching ${INCLUDEOP} ${STATICLIB}
 	@echo "Quenching compiled"
 	$(VOIDLINE)
 	@echo "Compiled Succesfully"

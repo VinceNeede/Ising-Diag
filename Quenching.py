@@ -12,11 +12,13 @@ else:
 np.set_printoptions(precision=15)
 
 class QuenchResult:
-    def __init__(self, ell, gfield0, gfield1, hfield, theta, PBC, 
+    def __init__(self, ell,steps, gfield0, gfield1, hfield0, hfield, theta, PBC, 
             thetaf, broken_mag, magz, magx) -> None:
         self.ell=int(ell)
+        self.steps=int(steps)
         self.gfield0=np.double(gfield0)
         self.gfield1=np.double(gfield1)
+        self.hfield0=np.double(hfield0)
         self.hfield=np.double(hfield)
         self.theta=np.double(theta)
         self.PBC = True if PBC == ' T' else False
@@ -26,7 +28,7 @@ class QuenchResult:
         self.magx=np.double(magx)
         
 
-def quenching(ell: int, gfield0: np.double, gfield1: np.double, hfield:np.double, theta: np.double, PBC: bool, 
+def quenching(ell: int, gfield0: np.double, gfield1: np.double, hfield0:np.double, hfield:np.double, theta: np.double, PBC: bool, 
             steps: int=1000, OUTPUTFILE:str=None):
     fileout="quenching"        
     f=open("chain.in", "w")
@@ -34,7 +36,8 @@ def quenching(ell: int, gfield0: np.double, gfield1: np.double, hfield:np.double
 f"{ell}	    ! Number of spins in the system		(ell)\n\
 {gfield0}	! Starting magnetic field strength	(g0)\n\
 {gfield1}	! Ending magnetic field strength	(g1)\n\
-{hfield}	! Longitudinal magnetic field strength	(h)\n\
+{hfield0}	! Starting Longitudinal magnetic field strength	(h)\n\
+{hfield}	! Ending Longitudinal magnetic field strength	(h)\n\
 {theta}	! Rescaled time	(theta)\n\
 .{'true' if PBC else 'false'}.	! Type of boundary conditions  		(.true. -> PBC,        .false. -> OBC)\n\
 .true.	! Type of diagonalization      		(.true. -> Davidson,   .false. -> Lapack full diag) NOT IMPLEMENTED\n\
@@ -49,7 +52,7 @@ f"{ell}	    ! Number of spins in the system		(ell)\n\
             f=open(OUTPUTFILE,"a")
         else:
             f=open(OUTPUTFILE,"w")
-            f.write("ell,g0,g1,h,theta_fin,PBC,theta,broken_mag,magz,magX\n")
+            f.write("ell,steps,g0,g1,h0,h,theta_fin,PBC,theta,broken_mag,magz,magX\n")
             f.flush()
         p=subprocess.Popen(indir+fileout, shell=True, stdout=f, text=True)
         p.wait()
@@ -60,5 +63,5 @@ f"{ell}	    ! Number of spins in the system		(ell)\n\
     return QuenchResult(*p.communicate()[0].decode().replace('\n','').split(sep=','))
 
 if __name__=='__main__':
-    res=quenching(10,0.8,0.9999,0.,1.,PBC=True, OUTPUTFILE="pippp.dat")
+    res=quenching(10,0.8,0.9999,0.,0.,1.,PBC=True, OUTPUTFILE="pippp.dat")
     print(res['ell'])
