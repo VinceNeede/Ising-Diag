@@ -27,22 +27,25 @@ module ODE
         complex, intent(out) :: y(N)
         
         
-        complex :: c1(N), c2(N), c3(N), c4(N)
+        complex :: c1(N)
         
         call fun(c1, y0, x0, N)
-        call fun(c2, y0+dx*(0.5,0.)*c1, x0+0.5*dx, N)
-        call fun(c3, y0+dx*(0.5,0.)*c2, x0+0.5*dx, N)
-        call fun(c4, y0+dx*c3, x0+dx, N)
+        y=y0+dx*c1/(6.d0,0.)
+        call fun(c1, y0+dx*(0.5,0.)*c1, x0+0.5*dx, N)
+        y=y+dx/(3.d0,0.)*c1
+        call fun(c1, y0+dx*(0.5,0.)*c1, x0+0.5*dx, N)
+        y=y+dx/(3.d0,0.)*c1
+        call fun(c1, y0+dx*c1, x0+dx, N)
         
-        y=y0+(c1+(2.d0,0.)*(c2+c3)+c4)*dx/(6.d0,0.)
-        !y=y0+c1*dx
+        y=y+c1*dx/(6.d0,0.)
+        !y=y0+c1*cmplx(dx)
     End Subroutine Runge_Kutta
 end module ODE
 
 MODULE SystemParameters
     !!! This Library contains the variables to be imported 
     LOGICAL  :: PBC, ctrlDav, verbose
-    DOUBLE PRECISION :: Lambda, gfield0, gfield1, theta
+    DOUBLE PRECISION :: Lambda, Lambda0, gfield0, gfield1, theta
     integer :: steps
 END MODULE SystemParameters
 
@@ -53,7 +56,7 @@ program dsaupd_mkl
     use mkl_spblas
     ! Import the variables
     use SystemParameters
-    
+
     use ODE
     
     implicit none
@@ -63,7 +66,7 @@ program dsaupd_mkl
     real, allocatable :: evec(:,:), E0(:)
     
     type(SPARSE_MATRIX_T) :: A, A_cmplx
-    TYPE(MATRIX_DESCR) :: descrA
+    TYPE(MATRIX_DESCR) :: descrA,descrA_cmplx
     integer,allocatable :: row(:), col(:)
     real, allocatable :: val(:), magX(:), magZ(:)
     complex, allocatable :: val_cmplx(:)
@@ -79,6 +82,7 @@ program dsaupd_mkl
     READ (1,*) ell       ! Chain length
     READ (1,*) gfield0    ! transverse magnetic field
     READ (1,*) gfield1    ! transverse magnetic field
+    READ (1,*) Lambda0    ! starting longitudinal field
     READ (1,*) Lambda    ! longitudinal field
     READ (1,*) theta    ! transverse magnetic field
     READ (1,*) PBC       ! Type of boundary condirions (.true. -> PBC,   .false. -> OBC)
@@ -100,7 +104,7 @@ program dsaupd_mkl
     !   | the Ising Hamiltonian in coo format.  |
     !   %---------------------------------------%
     
-    call Build_Ham(A, A_cmplx, descrA, row, col, val, val_cmplx, ell, N, nnz)
+    call Build_Ham(A, A_cmplx, descrA,descrA_cmplx, row, col, val, val_cmplx, ell, N, nnz)
     
     ! x=[1.d0,0.d0]
     ! print*, 'fine till here'
@@ -157,6 +161,7 @@ program dsaupd_mkl
     if (verbose) then
         do ii =1, steps
             call Runge_Kutta(fun, y0, x0, dx, y, N)
+            y=y/nrm2(y)
             call Magnetization(y, broken_mag, magX, magZ)
             y0=y
             x0=x0+dx
@@ -165,6 +170,7 @@ program dsaupd_mkl
     else
         do ii=1,steps
             call Runge_Kutta(fun, y0, x0, dx, y, N)
+            y=y/nrm2(y)
             y0=y
             x0=x0+dx
         end do
@@ -225,7 +231,7 @@ program dsaupd_mkl
             spin_z (ii)= ell-2*c_down
         enddo
     end subroutine
-    subroutine Build_Ham(A, A_cmplx, descrA, row, col, val, val_cmplx, ell, N, nnz)
+    subroutine Build_Ham(A, A_cmplx, descrA,descrA_cmplx, row, col, val, val_cmplx, ell, N, nnz)
         
         !   %---------------------------------------%
         !   | Build the Sparse Matrix in COO Format.|
@@ -243,7 +249,7 @@ program dsaupd_mkl
         
         implicit none
         type(SPARSE_MATRIX_T), intent(out) :: A, A_cmplx
-        TYPE(MATRIX_DESCR), intent(out) :: descrA
+        TYPE(MATRIX_DESCR), intent(out) :: descrA, descrA_cmplx
         integer, intent(out) :: row(:), col(:)
         real, intent(out) :: val(:)
         complex, intent(out) :: val_cmplx(:)
@@ -292,16 +298,17 @@ program dsaupd_mkl
         do kk=1,N
             col(kk)=kk
             row(kk)=kk
-            val(kk)=Lambda*spin_z(kk)
+            val(kk)=Lambda0*spin_z(kk)
+            val_cmplx(kk)=cmplx(Lambda*spin_z(kk))
             do ii=1,ell-1
                 val(kk)=val(kk)+2.d0*real(mod(ispin(kk,ii)+iSpin(kk,ii+1),2),8)-1.d0
+                val_cmplx(kk)=val_cmplx(kk)+cmplx(2.d0*real(mod(ispin(kk,ii)+iSpin(kk,ii+1),2),8)-1.d0)
             enddo
-            val_cmplx(kk)=cmplx(val(kk))
         enddo
         if (PBC) then
             do kk = 1,N
                 val(kk)=val(kk)+2.d0*real(mod(ispin(kk,ell)+iSpin(kk,1),2),8)-1.d0
-                val_cmplx(kk)=cmplx(val(kk))
+                val_cmplx(kk)=val_cmplx(kk)+cmplx(2.d0*real(mod(ispin(kk,ell)+iSpin(kk,1),2),8)-1.d0)
             enddo
         endif
         start_arr=N
@@ -335,6 +342,11 @@ program dsaupd_mkl
         if (stat .ne. 0) print*, 'error in sparse matrix creation: ', stat
         stat=mkl_sparse_z_create_coo(A_cmplx,SPARSE_INDEX_BASE_ONE,N, N, nnz, row,col, val_cmplx)
         if (stat .ne. 0) print*, 'error in sparse matrix creation Complex: ', stat
+        
+        descrA_cmplx % TYPE = SPARSE_MATRIX_TYPE_HERMITIAN           !!! col .geq. row
+        descrA_cmplx % Mode = SPARSE_FILL_MODE_UPPER
+        descrA_cmplx % diag = SPARSE_DIAG_NON_UNIT
+        
         descrA % TYPE = SPARSE_MATRIX_TYPE_SYMMETRIC            !!! col .geq. row
         descrA % Mode = SPARSE_FILL_MODE_UPPER
         descrA % diag = SPARSE_DIAG_NON_UNIT
@@ -347,7 +359,7 @@ program dsaupd_mkl
         complex, intent(out) :: z(N)
         
         integer :: stat
-        stat=mkl_sparse_z_mv(SPARSE_OPERATION_NON_TRANSPOSE, cmplx(0.,-1.), A_cmplx, descrA, y,(0.,0.), z)
+        stat=mkl_sparse_z_mv(SPARSE_OPERATION_NON_TRANSPOSE, cmplx(0.,-1.), A_cmplx, descrA_cmplx, y,(0.,0.), z)
         if (stat .ne. 0) print*, 'error mkl_sparse_d_mv: ', stat
         
     end subroutine fun
@@ -367,7 +379,7 @@ program dsaupd_mkl
             magz(ii)=0.d0
             magx(ii)=0.d0
             do jj=1,N
-                magz(ii)=magz(ii)-(1-2*iSpin(jj,ii))*abs(psi(jj))**2
+                magz(ii)=magz(ii)-(1-2*iSpin(jj,ii))*real(conjg(psi(jj))*psi(jj))
                 magx(ii)=magx(ii)-real(psi(jj)*conjg(psi(jj+2**(ii-1)*(1-2*ispin(jj,ii)))))
             enddo
         enddo
@@ -379,13 +391,25 @@ program dsaupd_mkl
         real, intent(in) :: t
         
         if (PBC) then
-            write(*,'(I4,4(",",ES22.14)",",L2,4(",",ES22.14))') ell, gfield0, gfield1, Lambda, theta, PBC, t, broken_mag, magz(1), magX(1)
+            write(*,'(I4,",",I8,5(",",ES22.14)",",L2,4(",",ES22.14))') ell,steps, gfield0, gfield1, Lambda0, Lambda, theta, PBC, t, broken_mag, magz(1), magX(1)
         else
-            write(*,100) ell, gfield0, gfield1, Lambda, theta, PBC, t, broken_mag, magz, magX
-            100   Format((I4,4(",",ES22.14)",",L2,<2+2*ell>(",",ES22.14)))
+            write(*,100) ell,steps, gfield0, gfield1, Lambda0, Lambda, theta, PBC, t, broken_mag, magz, magX
+            100   Format((I4,",",I8,5(",",ES22.14)",",L2,<2+2*ell>(",",ES22.14)))
         endif
         
     end subroutine out    
     
+    function nrm2(psi)
+        complex, intent(in) :: psi(:)
+        real :: nrm2
+
+        integer :: i
+
+        nrm2=0.d0
+        do i=1,size(psi)
+            nrm2=nrm2+conjg(psi(i))*psi(i)
+        enddo
+        nrm2=sqrt(nrm2)
+    end function nrm2
 end program dsaupd_mkl
 
