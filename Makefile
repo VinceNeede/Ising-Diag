@@ -14,8 +14,8 @@ ifndef OUTDIR
     OUTDIR=win_results/
 endif
 else
-STATICLIB= /usr/local/lib/libarpackILP64.a ${MKLROOT}/lib/intel64/libmkl_blas95_ilp64.a ${MKLROOT}/lib/intel64/libmkl_lapack95_ilp64.a -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_ilp64.a ${MKLROOT}/lib/intel64/libmkl_intel_thread.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lmkl_intel_ilp64 -liomp5 -lpthread -lm -ldl
-INCLUDEOP=-I${MKLROOT}/include/intel64/ilp64 -i8  -I"${MKLROOT}/include" -I/usr/local/lib
+STATICLIB= /home/v.bisogno3/ARPACK/libarpackILP64.a ${MKLROOT}/lib/intel64/libmkl_blas95_ilp64.a ${MKLROOT}/lib/intel64/libmkl_lapack95_ilp64.a -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_ilp64.a ${MKLROOT}/lib/intel64/libmkl_intel_thread.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lmkl_intel_ilp64 -liomp5 -lpthread -lm -ldl
+INCLUDEOP=-I${MKLROOT}/include/intel64/ilp64 -i8  -I"${MKLROOT}/include" -I/home/v.bisogno3/
 OPTIONS=-warn all -module ${OUTDIR}
 VOIDLINE=@echo ""
 PATHINCLUDE="${MKLROOT}/include"

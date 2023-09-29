@@ -1,10 +1,10 @@
-6	    ! Number of spins in the system		(ell)
+7	    ! Number of spins in the system		(ell)
 1.0	! Starting magnetic field strength	(g0)
 1.0	! Ending magnetic field strength	(g1)
--0.03475092791275205	! Starting Longitudinal magnetic field strength	(h)
-0.03475092791275205	! Ending Longitudinal magnetic field strength	(h)
+-0.02602802258894804	! Starting Longitudinal magnetic field strength	(h)
+0.02602802258894804	! Ending Longitudinal magnetic field strength	(h)
 39.0	! Rescaled time	(theta)
 .true.	! Type of boundary conditions  		(.true. -> PBC,        .false. -> OBC)
 .true.	! Type of diagonalization      		(.true. -> Davidson,   .false. -> Lapack full diag) NOT IMPLEMENTED
-99900    ! Number of steps for the runge-kutta
+400    ! Number of steps for the runge-kutta
 .false.  ! .true. prints each step, .false. prints only the ending step

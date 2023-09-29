@@ -30,23 +30,22 @@ class QuenchResult:
 
 def quenching(ell: int, gfield0: np.double, gfield1: np.double, hfield0:np.double, hfield:np.double, theta: np.double, PBC: bool, 
             steps: int=1000, OUTPUTFILE:str=None):
-    fileout="quenching"        
-    f=open("chain.in", "w")
-    f.write(
-f"{ell}	    ! Number of spins in the system		(ell)\n\
-{gfield0}	! Starting magnetic field strength	(g0)\n\
-{gfield1}	! Ending magnetic field strength	(g1)\n\
-{hfield0}	! Starting Longitudinal magnetic field strength	(h)\n\
-{hfield}	! Ending Longitudinal magnetic field strength	(h)\n\
-{theta}	! Rescaled time	(theta)\n\
-.{'true' if PBC else 'false'}.	! Type of boundary conditions  		(.true. -> PBC,        .false. -> OBC)\n\
-.true.	! Type of diagonalization      		(.true. -> Davidson,   .false. -> Lapack full diag) NOT IMPLEMENTED\n\
-{steps}    ! Number of steps for the runge-kutta\n\
-.{'true' if OUTPUTFILE is not None else 'false'}.  ! .true. prints each step, .false. prints only the ending step"\
-        )
-    f.close()
-
-    
+    fileout="quenching"  
+    args=f" {ell} {gfield0} {gfield1} {hfield0} {hfield} {theta} .{'true' if PBC else 'false'}. {steps} .{'true' if OUTPUTFILE is not None else 'false'}."
+#     f=open("chain.in", "w")
+#     f.write(
+# f"{ell}	    ! Number of spins in the system		(ell)\n\
+# {gfield0}	! Starting magnetic field strength	(g0)\n\
+# {gfield1}	! Ending magnetic field strength	(g1)\n\
+# {hfield0}	! Starting Longitudinal magnetic field strength	(h)\n\
+# {hfield}	! Ending Longitudinal magnetic field strength	(h)\n\
+# {theta}	! Rescaled time	(theta)\n\
+# .{'true' if PBC else 'false'}.	! Type of boundary conditions  		(.true. -> PBC,        .false. -> OBC)\n\
+# .true.	! Type of diagonalization      		(.true. -> Davidson,   .false. -> Lapack full diag) NOT IMPLEMENTED\n\
+# {steps}    ! Number of steps for the runge-kutta\n\
+# .{'true' if OUTPUTFILE is not None else 'false'}.  ! .true. prints each step, .false. prints only the ending step"\
+#         )
+#     f.close()
     if OUTPUTFILE is not None:
         if os.path.isfile(OUTPUTFILE):
             f=open(OUTPUTFILE,"a")
@@ -54,12 +53,12 @@ f"{ell}	    ! Number of spins in the system		(ell)\n\
             f=open(OUTPUTFILE,"w")
             f.write("ell,steps,g0,g1,h0,h,theta_fin,PBC,theta,broken_mag,magz,magX\n")
             f.flush()
-        p=subprocess.Popen(indir+fileout, shell=True, stdout=f, text=True)
+        p=subprocess.Popen(indir+fileout+args, shell=True, stdout=f, text=True)
         p.wait()
         f.flush()
         f.close()
         return
-    p=subprocess.Popen(indir+fileout, shell=True, stdout=subprocess.PIPE)
+    p=subprocess.Popen(indir+fileout+args, shell=True, stdout=subprocess.PIPE)
     return QuenchResult(*p.communicate()[0].decode().replace('\n','').split(sep=','))
 
 if __name__=='__main__':

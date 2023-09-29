@@ -70,26 +70,50 @@ program dsaupd_mkl
     integer,allocatable :: row(:), col(:)
     real, allocatable :: val(:), magX(:), magZ(:)
     complex, allocatable :: val_cmplx(:)
-    
+    character(len=15) :: in_c
+
     real :: x0, dx
     complex, allocatable :: y0(:), y(:)
     !   %--------------------------------------%
     !   | Import the parameteres from the      |
     !   | file chain.in                        |
     !   %--------------------------------------%
+    call get_command_argument(1,in_c)
+    read(in_c,*) ell
+    call get_command_argument(2,in_c)
+    read(in_c,*) gfield0
+    call get_command_argument(3,in_c)
+    read(in_c,*) gfield1
+    call get_command_argument(4,in_c)
+    read(in_c,*) Lambda0
+    call get_command_argument(5,in_c)
+    read(in_c,*) Lambda
+    call get_command_argument(6,in_c)
+    read(in_c,*) theta
+    call get_command_argument(7,in_c)
+    read(in_c,*) PBC
+    call get_command_argument(8,in_c)
+    read(in_c,*) steps
+    call get_command_argument(9,in_c)
+    read(in_c,*) verbose
+
+
+
+
     
-    OPEN (Unit=1,file='chain.in',status='old')
-    READ (1,*) ell       ! Chain length
-    READ (1,*) gfield0    ! transverse magnetic field
-    READ (1,*) gfield1    ! transverse magnetic field
-    READ (1,*) Lambda0    ! starting longitudinal field
-    READ (1,*) Lambda    ! longitudinal field
-    READ (1,*) theta    ! transverse magnetic field
-    READ (1,*) PBC       ! Type of boundary condirions (.true. -> PBC,   .false. -> OBC)
-    READ (1,*) ctrlDav   ! Type of diagonalization     (.true. -> Davidson,   .false. -> Lapack full diag)
-    read (1,*) steps    ! Number of steps for the runge-kutta
-    read (1,*) verbose  ! .true. prints each step, .false. prints only the ending step
-    CLOSE (unit=1)
+    ! print*, ell
+    ! OPEN (Unit=1,file='chain.in',status='old')
+    ! READ (1,*) ell       ! Chain length
+    ! READ (1,*) gfield0    ! transverse magnetic field
+    ! READ (1,*) gfield1    ! transverse magnetic field
+    ! READ (1,*) Lambda0    ! starting longitudinal field
+    ! READ (1,*) Lambda    ! longitudinal field
+    ! READ (1,*) theta    ! transverse magnetic field
+    ! READ (1,*) PBC       ! Type of boundary condirions (.true. -> PBC,   .false. -> OBC)
+    ! READ (1,*) ctrlDav   ! Type of diagonalization     (.true. -> Davidson,   .false. -> Lapack full diag)
+    ! read (1,*) steps    ! Number of steps for the runge-kutta
+    ! read (1,*) verbose  ! .true. prints each step, .false. prints only the ending step
+    ! CLOSE (unit=1)
     N=2**ell
     nnz = N+ell*2**(ell-1)           ! Interaction XX, gfield over Z, lambdafield over X
     
