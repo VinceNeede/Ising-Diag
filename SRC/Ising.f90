@@ -22,19 +22,22 @@ program dsaupd_mkl
     TYPE(MATRIX_DESCR) :: descrA
     integer,allocatable :: row(:), col(:)
     real(8), allocatable :: val(:), magX(:), magZ(:)
-    
+    character(len=15) :: in_c
+
     !   %--------------------------------------%
     !   | Import the parameteres from the      |
-    !   | file chain.in                        |
+    !   | command line                         |
     !   %--------------------------------------%
     
-    OPEN (Unit=1,file='chain.in',status='old')
-    READ (1,*) ell       ! Chain length
-    READ (1,*) gfield    ! transverse magnetic field
-    READ (1,*) Lambda    ! longitudinal field
-    READ (1,*) PBC       ! Type of boundary condirions (.true. -> PBC,   .false. -> OBC)
-    READ (1,*) ctrlDav   ! Type of diagonalization     (.true. -> Davidson,   .false. -> Lapack full diag)
-    CLOSE (unit=1)
+    call get_command_argument(1,in_c)
+    read(in_c,*) ell
+    call get_command_argument(2,in_c)
+    read(in_c,*) gfield
+    call get_command_argument(3,in_c)
+    read(in_c,*) Lambda
+    call get_command_argument(4,in_c)
+    read(in_c,*) PBC
+
     N=2**ell
     nnz = N+ell*2**(ell-1)           ! Interaction XX, gfield over Z, lambdafield over X
     

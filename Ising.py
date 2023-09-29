@@ -118,17 +118,9 @@ def Ising(ell: int, gfield: np.double, hfield:np.double, PBC: bool, parity: bool
         fileout='Ising_Parity'
     else:
         fileout='Ising'
-        
-    f=open("chain.in", "w")
-    f.write(
-f"{ell}	    ! Number of spins in the system		(ell)\n\
-{gfield}	! Transverse magnetic field strength	(g)\n\
-{hfield}	! Longitudinal magnetic field strength	(h)\n\
-.{'true' if PBC else 'false'}.	! Type of boundary conditions  		(.true. -> PBC,        .false. -> OBC)\n\
-.true.	! Type of diagonalization      		(.true. -> Davidson,   .false. -> Lapack full diag) NOT IMPLEMENTED\n"\
-        )
-    f.close()
-    p=subprocess.Popen(indir+fileout, shell=True, stdout=subprocess.PIPE)
+    args=f" {ell} {gfield} {hfield} .{'true' if PBC else 'false'}."
+
+    p=subprocess.Popen(indir+fileout+args, shell=True, stdout=subprocess.PIPE)
     out=p.communicate()[0].decode().replace('\n','').split(sep=',')
     out_ell=float(out.pop(0))
     out_gfield=float(out.pop(0))
