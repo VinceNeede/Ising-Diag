@@ -7,7 +7,7 @@ fig, axs = plt.subplots(2)
 for ispin in range(3,21):
     filter_data=data[data['L']==ispin]
     axs[0].plot(filter_data['kg'], abs(filter_data['broken_mag'])*ispin**0.125,label=f"L= {ispin}")
-    axs[1].plot(filter_data['kg'],abs(filter_data['E_m']-filter_data['E_p'])*ispin)
+    axs[1].plot(filter_data['kg']/ispin+1.,abs(filter_data['E_m']-filter_data['E_p'])*ispin)
 fig.legend()
 axs[0].set_ylabel(r'$M L^{1/8}$')
 #axs[0].set_xlim((-1.,1.))
