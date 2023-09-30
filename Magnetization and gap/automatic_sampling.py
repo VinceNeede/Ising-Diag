@@ -6,8 +6,8 @@ sys.path.append('./')
 from Ising import Ising, Ising_Parity_Result
 import multiprocessing as mp
 
-elles=range(3,5)
-gs=np.linspace(0.,2.,10)
+elles=range(3,21)
+gs=np.linspace(0.,2.,50)
 if 1. not in gs:
     gs=np.append(gs,1.)
     gs=np.sort(gs)
