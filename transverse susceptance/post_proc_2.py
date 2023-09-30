@@ -21,7 +21,7 @@ figs[0].savefig("transverse susceptance/specific_heat.png")
 
 filtered_data = data[data['g'] == 1.]
 filtered_data=filtered_data.sort_values(by='L')
-axs[1].scatter(filtered_data['L'], filtered_data['chi'],color='red',marker='*',label="Lanczos")
+axs[1].scatter(filtered_data['L'], filtered_data['chi'],color='red',marker='^',label="Lanczos",s=200)
 axs[1].set_xlabel(r'$L$')
 axs[1].set_ylabel(r'$g\chi_x(g=1)$')
 x=np.linspace(1,100,10,endpoint=True)
@@ -29,7 +29,7 @@ def fun (x):
     return 0.32*np.log(x)+0.16
 axs[1].semilogx()
 axs[1].set_xticks([1,10,100],[r'$1$',r'$10$',r'$100$'])
-axs[1].plot(x,fun(x),label=r'$0.32\log (L) + 0.16$')
+axs[1].plot(x,fun(x),label=r'$0.32\log (L) + 0.16$',linewidth=2.5)
 axs[1].legend(loc="upper left",framealpha=0.,ncol=1)
 
 figs[1].savefig("transverse susceptance/specific_heat_scaling.png")
