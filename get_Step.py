@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-data=pd.read_csv("quench4.dat")
+data=pd.read_csv("quench_error_step.dat")
 elles=[3,4,5,6,7,8,9,10,11,12]
  
 steps=[]
